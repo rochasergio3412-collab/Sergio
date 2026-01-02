@@ -1,1 +1,8 @@
-{"name":"sergio-bot","version":"1.0.0","main":"index.js","dependencies":{"mongoose":"^8.0.0"}}  
+{
+  "name": "sergio-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "mongoose": "^8.0.0"
+  }
+} 
