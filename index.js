@@ -4,24 +4,19 @@ const mongoose = require('mongoose');
 const app = express();
 app.use(express.json());
 
-// ORDEN: Buscar la variable de entorno que configuramos en Render
-const MONGO_URI = process.env.mongo_db_uri;
+// Poniendo el enlace directo para que no haya errores de "undefined"
+const MONGO_URI = "mongodb+srv://Sergio:mi358q@cluster0.tjlqxpj.mongodb.net/?retryWrites=true&w=majority";
 
-// Verificar si la variable existe antes de intentar conectar
-if (!MONGO_URI) {
-    console.log("❌ ERROR: La variable 'mongo_db_uri' no está configurada en Render.");
-} else {
-    mongoose.connect(MONGO_URI)
-        .then(() => console.log("✅ SIP App conectada al mongo db barra baja"))
-        .catch((err) => console.log("❌ Error de conexión en Mongo:", err.message));
-}
+mongoose.connect(MONGO_URI)
+  .then(() => console.log("✅ ¡VICTORIA! Siri App conectada directamente al mongo bebé"))
+  .catch((err) => console.log("❌ Error en los datos del enlace:", err.message));
 
 const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
-    res.send('Siri App de Sergio: ¡Estamos en línea!');
+  res.send('Siri App de Sergio: ¡CONECTADA DIRECTAMENTE!');
 });
 
 app.listen(PORT, () => {
-    console.log("🚀 SIP App corriendo en puerto", PORT);
+  console.log("🚀 Servidor corriendo en puerto", PORT);
 });
