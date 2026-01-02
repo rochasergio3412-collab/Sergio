@@ -1,8 +1,13 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const app = express();
+const cors = require('cors'); // Agregado para que Siri app conecte con el móvil
 
-const MONGO_URI = process.env.mongo_db_uri; 
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+// Esta es la variable que busca en Render
+const MONGO_URI = process.env.mongo_db_uri;
 const PORT = process.env.PORT || 10000;
 
 mongoose.connect(MONGO_URI)
@@ -11,6 +16,12 @@ mongoose.connect(MONGO_URI)
 
 app.get('/', (req, res) => {
   res.send('SIP App: Servidor Limpio y Conectado.');
+});
+
+// Ruta para recibir mensajes de la Siri app
+app.post('/enviar', async (req, res) => {
+  console.log("Mensaje recibido:", req.body);
+  res.json({ estado: "recibido" });
 });
 
 app.listen(PORT, () => {
