@@ -1,15 +1,12 @@
 {
-  "name": "sergio-bot",
+  "name": "sip-app",
   "version": "1.0.0",
-  "description": "Bot de fotos para Render",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "mongoose": "^7.0.0",
-    "multer": "^1.4.5-lts.1",
-    "dotenv": "^16.0.3"
+    "mongoose": "^7.0.0"
   }
 }
