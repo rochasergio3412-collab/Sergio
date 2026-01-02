@@ -2,21 +2,21 @@ const express = require('express');
 const mongoose = require('mongoose');
 
 const app = express();
-app.use(express.json());
 
-// Poniendo el enlace directo para que no haya errores de "undefined"
-const MONGO_URI = "mongodb+srv://Sergio:mi358q@cluster0.tjlqxpj.mongodb.net/?retryWrites=true&w=majority";
+// REVISA BIEN ESTA LÍNEA: 
+// Cambia 'Sergio' y 'TU_CONTRASEÑA' por tus datos reales de MongoDB
+const MONGO_URI = "mongodb+srv://Sergio:TU_CONTRASEÑA@cluster0.tjlqxpj.mongodb.net/SiriApp?retryWrites=true&w=majority";
 
 mongoose.connect(MONGO_URI)
-  .then(() => console.log("✅ ¡VICTORIA! Siri App conectada directamente al mongo bebé"))
-  .catch((err) => console.log("❌ Error en los datos del enlace:", err.message));
-
-const PORT = process.env.PORT || 10000;
+  .then(() => console.log("✅ ¡VICTORIA TOTAL! Siri App conectada al mongo bebé"))
+  .catch((err) => {
+    console.log("❌ ERROR DE CONEXIÓN:");
+    console.log(err.message);
+  });
 
 app.get('/', (req, res) => {
-  res.send('Siri App de Sergio: ¡CONECTADA DIRECTAMENTE!');
+  res.send('Siri App de Sergio: Esperando conexión...');
 });
 
-app.listen(PORT, () => {
-  console.log("🚀 Servidor corriendo en puerto", PORT);
-});
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log("🚀 Servidor en puerto", PORT));
