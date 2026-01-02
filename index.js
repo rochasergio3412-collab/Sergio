@@ -1,1 +1,18 @@
-"const express = require('express'); const mongoose = require('mongoose'); const multer = require('multer'); const path = require('path'); const app = express(); const upload = multer({ dest: 'uploads/' }); const contenidoSchema = new mongoose.Schema({ nombre: String, tipo: String, fecha: { type: Date, default: Date.now } }); const Contenido = mongoose.model('Contenido', contenidoSchema); mongoose.connect(process.env.MONGODB_URI); app.use('/uploads', express.static('uploads')); app.post('/subir', upload.single('archivo'), async (req, res) => { const nuevo = new Contenido({ nombre: req.file.originalname, tipo: req.file.mimetype }); await nuevo.save(); res.send('�Archivo guardado en tu servidor, Sergio!'); }); app.listen(3000, () => console.log('Servidor listo para recibir de todo'));"  
+const express = require('express');
+const mongoose = require('mongoose');
+const app = express();
+
+const MONGO_URI = process.env.mongo_db_uri; 
+const PORT = process.env.PORT || 10000;
+
+mongoose.connect(MONGO_URI)
+  .then(() => console.log("¡SIP App conectada al mongo db barra baja!"))
+  .catch((err) => console.log("Error de conexión:", err));
+
+app.get('/', (req, res) => {
+  res.send('SIP App: Servidor Limpio y Conectado.');
+});
+
+app.listen(PORT, () => {
+  console.log("SIP App corriendo en puerto", PORT);
+});
