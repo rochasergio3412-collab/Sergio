@@ -11,7 +11,7 @@ mongoose.connect(mongoUri)
   .catch(err => console.error('❌ Error de conexión:', err));
 
 app.get('/', (req, res) => {
-  res.send('Siri App Snapchat Nativo - ¡En línea! 🚀');
+  res.send('SIP App Snapchat Nativo - ¡En línea! 🚀');
 });
 
 app.listen(PORT, () => {
