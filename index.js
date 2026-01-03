@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(cors());
 
 // 1. VARIABLE MAESTRA
-const mongouri = process.env.mongo_bebe_uri;
+const mongouri = process.env.mongo_db_uri;
 
 // 2. EL ESQUEMA TOTAL (Basado en tu Plan Maestro)
 const UsuarioSchema = new mongoose.Schema({
