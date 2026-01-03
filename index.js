@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(cors());
 
 // 1. VARIABLE MAESTRA
-const mongouri = process.env.mongo_db_uri;
+const mongouri = process.env.Mongo_db_uri;
 
 // 2. EL ESQUEMA TOTAL (Basado en tu Plan Maestro)
 const UsuarioSchema = new mongoose.Schema({
@@ -55,7 +55,7 @@ const Usuario = mongoose.model('Usuario', UsuarioSchema);
 // 3. CONEXIÓN A LA BASE DE DATOS
 async function iniciarMotorSIP() {
     if (!mongouri) {
-        console.error("❌ ERROR CRÍTICO: No existe la variable mongo_db_uri.");
+        console.error("❌ ERROR CRÍTICO: No existe la variable Mongo_db_uri.");
         return;
     }
     try {
