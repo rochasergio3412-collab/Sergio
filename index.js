@@ -1,116 +1,74 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
-app.use(express.json());
-app.use(cors());
 
-// 1. VARIABLE MAESTRA
-const mongouri = process.env.Mongo_db_uri;
+app.use(cors()); 
+app.use(express.json()); 
 
-// 2. EL ESQUEMA TOTAL (Basado en tu Plan Maestro)
+// CONEXIÓN A MONGODB
+const mongoURI = process.env.Mongo_db_uri; 
+
+mongoose.connect(mongoURI)
+  .then(() => console.log("✅ Conectado a MongoDB - SIP App"))
+  .catch((err) => console.error("❌ Error de conexión:", err));
+
+// MODELO DE USUARIO
 const UsuarioSchema = new mongoose.Schema({
-    // Identidad y Seguridad
-    nombre: { type: String, required: true },
-    email: { type: String, unique: true, required: true },
-    password: { type: String, required: true },
-    pinSeguridad: String,
-    avatar: String,
-    
-    // Perfil y Recuperación
-    correoRespaldo: String,
-    tokenRecuperacion: String,
-    
-    // Telemetría y Globalización
-    dispositivo: String,
-    idioma: { type: String, default: "Español" },
-    ultimaConexion: { type: Date, default: Date.now },
-    ip: String,
-    
-    // Control Familiar y Protección de Menores
-    esMenor: { type: Boolean, default: false },
-    vinculoParental: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario' }, // ID del Padre
-    tokenQR: { type: String, unique: true }, // Para vinculación rápida
-    
-    // Memoria Multimedia (Chats, Fotos, Videos)
-    mensajes: [{
-        tipo: { type: String, enum: ['texto', 'foto', 'video'], default: 'texto' },
-        contenido: String, // Texto o URL del archivo
-        emisor: String,
-        fecha: { type: Date, default: Date.now }
-    }],
-    
-    // Soporte Técnico
-    ticketsSoporte: [{
-        asunto: String,
-        mensaje: String,
-        estado: { type: String, default: 'Abierto' },
-        datosTecnicos: Object
-    }]
+  nombre: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  edad: Number,
+  fechaRegistro: { type: Date, default: Date.now }
 });
 
 const Usuario = mongoose.model('Usuario', UsuarioSchema);
 
-// 3. CONEXIÓN A LA BASE DE DATOS
-async function iniciarMotorSIP() {
-    if (!mongouri) {
-        console.error("❌ ERROR CRÍTICO: No existe la variable Mongo_db_uri.");
-        return;
-    }
-    try {
-        await mongoose.connect(mongouri);
-        console.log("-----------------------------------------");
-        console.log("✅ SIP APP: CONEXIÓN EXITOSA A MONGO_db_uri");
-        console.log("✅ MOTOR LISTO PARA PROCESAR DATOS");
-        console.log("-----------------------------------------");
-    } catch (e) {
-        console.error("❌ Fallo en el motor:", e);
-    }
-}
-
-// 4. FUNCIONALIDADES CLAVE (RUTAS)
-
-// Registro con detección de edad y generación de QR
+// RUTA: REGISTRARSE
 app.post('/registrar', async (req, res) => {
-    try {
-        const { nombre, email, password, edad, dispositivo } = req.body;
-        const esMenor = edad < 18;
-        const tokenQR = `SIP-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-        
-        const nuevo = new Usuario({
-            nombre, email, password, esMenor, dispositivo, tokenQR
-        });
-        await nuevo.save();
-        res.status(201).json({ mensaje: "Usuario SIP registrado", esMenor, tokenQR });
-    } catch (e) {
-        res.status(400).json({ error: "Error en registro" });
+  try {
+    const { nombre, email, password, edad } = req.body;
+    const existe = await Usuario.findOne({ email: email.toLowerCase() });
+    if (existe) return res.status(400).json({ error: "El correo ya está registrado en SIP App." });
+
+    const nuevoUsuario = new Usuario({ nombre, email: email.toLowerCase(), password, edad });
+    await nuevoUsuario.save();
+    res.status(201).json({ mensaje: "Usuario SIP registrado", usuario: nombre });
+  } catch (error) {
+    res.status(500).json({ error: "Error al registrar en MongoDB" });
+  }
+});
+
+// RUTA: INICIAR SESIÓN
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const usuario = await Usuario.findOne({ email: email.toLowerCase() });
+    
+    if (!usuario) {
+      return res.status(404).json({ error: "Usuario no encontrado en SIP App." });
     }
+
+    if (usuario.password !== password) {
+      return res.status(401).json({ error: "Contraseña incorrecta." });
+    }
+
+    res.json({ 
+      mensaje: "Bienvenido a SIP App", 
+      nombre: usuario.nombre
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Error en el proceso de login" });
+  }
 });
 
-// Guardar Multimedia (Fotos/Videos)
-app.post('/multimedia/guardar', async (req, res) => {
-    const { email, tipo, url } = req.body;
-    await Usuario.updateOne(
-        { email },
-        { $push: { mensajes: { tipo, contenido: url } } }
-    );
-    res.json({ mensaje: "Archivo procesado y guardado en SIP App" });
+app.get('/', (req, res) => {
+  res.send("🚀 El motor de SIP App está encendido, Sergio.");
 });
 
-// Soporte Técnico con Diagnóstico Automático
-app.post('/soporte/ticket', async (req, res) => {
-    const { email, asunto, mensaje, datosTecnicos } = req.body;
-    await Usuario.updateOne(
-        { email },
-        { $push: { ticketsSoporte: { asunto, mensaje, datosTecnicos } } }
-    );
-    res.json({ mensaje: "Ticket de ayuda enviado" });
-});
-
-// 5. ARRANQUE
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-    iniciarMotorSIP();
-    console.log(`📡 SIP App escuchando en puerto ${PORT}`);
+  console.log(`Servidor de SIP App corriendo en puerto ${PORT}`);
 });
