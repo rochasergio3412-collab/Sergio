@@ -55,13 +55,13 @@ const Usuario = mongoose.model('Usuario', UsuarioSchema);
 // 3. CONEXIÓN A LA BASE DE DATOS
 async function iniciarMotorSIP() {
     if (!mongouri) {
-        console.error("❌ ERROR CRÍTICO: No existe la variable mongo_bebe_uri.");
+        console.error("❌ ERROR CRÍTICO: No existe la variable mongo_db_uri.");
         return;
     }
     try {
         await mongoose.connect(mongouri);
         console.log("-----------------------------------------");
-        console.log("✅ SIP APP: CONEXIÓN EXITOSA A MONGO_BEBE");
+        console.log("✅ SIP APP: CONEXIÓN EXITOSA A MONGO_db_uri");
         console.log("✅ MOTOR LISTO PARA PROCESAR DATOS");
         console.log("-----------------------------------------");
     } catch (e) {
