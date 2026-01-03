@@ -1,7 +1,3 @@
-// ==========================================
-// SIP APP - SISTEMA INTEGRADO TOTAL (Sergio)
-// ==========================================
-
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -10,121 +6,111 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// 1. VARIABLE DE ENTORNO
+// 1. VARIABLE MAESTRA
 const mongouri = process.env.mongo_bebe_uri;
 
-// 2. ESQUEMA DE DATOS TOTAL (Toda la información de SIP App)
+// 2. EL ESQUEMA TOTAL (Basado en tu Plan Maestro)
 const UsuarioSchema = new mongoose.Schema({
-    // --- Identidad ---
+    // Identidad y Seguridad
     nombre: { type: String, required: true },
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
-    avatar: { type: String, default: "perfil_sip.png" },
-
-    // --- Seguridad y Telemetría ---
-    fechaRegistro: { type: Date, default: Date.now },
-    ultimaConexion: { type: Date, default: Date.now },
-    dispositivo: { type: String, default: "Snapchat Nativo" },
-    versionApp: { type: String, default: "1.0.0" },
-    ip: String,
-
-    // --- Preferencias del Usuario ---
-    modoOscuro: { type: Boolean, default: true },
-    notificaciones: { type: Boolean, default: true },
+    pinSeguridad: String,
+    avatar: String,
+    
+    // Perfil y Recuperación
+    correoRespaldo: String,
+    tokenRecuperacion: String,
+    
+    // Telemetría y Globalización
+    dispositivo: String,
     idioma: { type: String, default: "Español" },
-
-    // --- Memoria de SIP App (Historial de Chat) ---
-    historialChat: [{
-        emisor: String, 
-        texto: String,
+    ultimaConexion: { type: Date, default: Date.now },
+    ip: String,
+    
+    // Control Familiar y Protección de Menores
+    esMenor: { type: Boolean, default: false },
+    vinculoParental: { type: mongoose.Schema.Types.ObjectId, ref: 'Usuario' }, // ID del Padre
+    tokenQR: { type: String, unique: true }, // Para vinculación rápida
+    
+    // Memoria Multimedia (Chats, Fotos, Videos)
+    mensajes: [{
+        tipo: { type: String, enum: ['texto', 'foto', 'video'], default: 'texto' },
+        contenido: String, // Texto o URL del archivo
+        emisor: String,
         fecha: { type: Date, default: Date.now }
+    }],
+    
+    // Soporte Técnico
+    ticketsSoporte: [{
+        asunto: String,
+        mensaje: String,
+        estado: { type: String, default: 'Abierto' },
+        datosTecnicos: Object
     }]
 });
 
 const Usuario = mongoose.model('Usuario', UsuarioSchema);
 
-// 3. FUNCIÓN DE CONEXIÓN A MONGO_BEBE_URI
-async function conectarBaseDeDatos() {
+// 3. CONEXIÓN A LA BASE DE DATOS
+async function iniciarMotorSIP() {
     if (!mongouri) {
-        console.error("❌ ERROR: Falta variable mongo_bebe_uri en Render.");
-        return false;
+        console.error("❌ ERROR CRÍTICO: No existe la variable mongo_bebe_uri.");
+        return;
     }
     try {
         await mongoose.connect(mongouri);
-        console.log("✅ SIP App conectada a mongo_bebe_uri con éxito.");
-        return true;
-    } catch (error) {
-        console.error("❌ Error al conectar base de datos de SIP App:", error);
-        return false;
+        console.log("-----------------------------------------");
+        console.log("✅ SIP APP: CONEXIÓN EXITOSA A MONGO_BEBE");
+        console.log("✅ MOTOR LISTO PARA PROCESAR DATOS");
+        console.log("-----------------------------------------");
+    } catch (e) {
+        console.error("❌ Fallo en el motor:", e);
     }
 }
 
-// 4. FUNCIONALIDAD: REGISTRO COMPLETO
+// 4. FUNCIONALIDADES CLAVE (RUTAS)
+
+// Registro con detección de edad y generación de QR
 app.post('/registrar', async (req, res) => {
     try {
-        const { nombre, email, password, dispositivo } = req.body;
-        const nuevoUsuario = new Usuario({
-            nombre,
-            email,
-            password,
-            dispositivo: dispositivo || "Snapchat Nativo",
-            ip: req.ip
+        const { nombre, email, password, edad, dispositivo } = req.body;
+        const esMenor = edad < 18;
+        const tokenQR = `SIP-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        
+        const nuevo = new Usuario({
+            nombre, email, password, esMenor, dispositivo, tokenQR
         });
-        await nuevoUsuario.save();
-        res.status(201).json({ mensaje: "Registro exitoso en SIP App", usuario: nombre });
-    } catch (error) {
-        res.status(400).json({ error: "No se pudo registrar en SIP App" });
+        await nuevo.save();
+        res.status(201).json({ mensaje: "Usuario SIP registrado", esMenor, tokenQR });
+    } catch (e) {
+        res.status(400).json({ error: "Error en registro" });
     }
 });
 
-// 5. FUNCIONALIDAD: LOGIN Y ACTUALIZACIÓN
-app.post('/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        const usuario = await Usuario.findOneAndUpdate(
-            { email, password },
-            { ultimaConexion: new Date() },
-            { new: true }
-        );
-        if (usuario) {
-            res.json({ 
-                mensaje: "Bienvenido a SIP App", 
-                nombre: usuario.nombre 
-            });
-        } else {
-            res.status(401).json({ error: "Credenciales inválidas en SIP App" });
-        }
-    } catch (error) {
-        res.status(500).json({ error: "Error de servidor" });
-    }
+// Guardar Multimedia (Fotos/Videos)
+app.post('/multimedia/guardar', async (req, res) => {
+    const { email, tipo, url } = req.body;
+    await Usuario.updateOne(
+        { email },
+        { $push: { mensajes: { tipo, contenido: url } } }
+    );
+    res.json({ mensaje: "Archivo procesado y guardado en SIP App" });
 });
 
-// 6. FUNCIONALIDAD: MEMORIA DEL CHAT
-app.post('/chat/guardar', async (req, res) => {
-    try {
-        const { email, emisor, texto } = req.body;
-        await Usuario.updateOne(
-            { email },
-            { $push: { historialChat: { emisor, texto } } }
-        );
-        res.json({ mensaje: "Memoria de SIP App actualizada" });
-    } catch (error) {
-        res.status(500).json({ error: "Error al guardar mensaje" });
-    }
+// Soporte Técnico con Diagnóstico Automático
+app.post('/soporte/ticket', async (req, res) => {
+    const { email, asunto, mensaje, datosTecnicos } = req.body;
+    await Usuario.updateOne(
+        { email },
+        { $push: { ticketsSoporte: { asunto, mensaje, datosTecnicos } } }
+    );
+    res.json({ mensaje: "Ticket de ayuda enviado" });
 });
 
-// 7. ARRANQUE DEL MOTOR
-async function iniciarSistema() {
-    const conectado = await conectarBaseDeDatos();
-    if (conectado) {
-        const PORT = process.env.PORT || 3000;
-        app.listen(PORT, () => {
-            console.log("------------------------------------");
-            console.log("🚀 MOTOR DE SIP APP EN LÍNEA");
-            console.log(`📡 Servidor: https://sergio-1.onrender.com`);
-            console.log("------------------------------------");
-        });
-    }
-}
-
-iniciarSistema();
+// 5. ARRANQUE
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    iniciarMotorSIP();
+    console.log(`📡 SIP App escuchando en puerto ${PORT}`);
+});
